@@ -42,16 +42,24 @@ _torch = None
 
 
 def _load_tf():
+    """Load the Keras DenseNet201 model trained by train_model.py.
+
+    Looks for (in order): best_model.keras, model.keras, model.h5
+    Class indices match Keras flow_from_directory (alphabetical):
+        0 -> NORMAL, 1 -> PNEUMONIA  (sigmoid output)
+    """
     global _tf_model
     if _tf_model is not None:
         return _tf_model
-    path = os.path.join(os.path.dirname(__file__), "model.h5")
-    if not os.path.exists(path):
-        return None
-    import tensorflow as tf  # type: ignore
-    _tf_model = tf.keras.models.load_model(path)
-    print(f"[PneumoScan] Loaded TensorFlow model: {path}")
-    return _tf_model
+    here = os.path.dirname(__file__)
+    for name in ("best_model.keras", "model.keras", "model.h5"):
+        path = os.path.join(here, name)
+        if os.path.exists(path):
+            import tensorflow as tf  # type: ignore
+            _tf_model = tf.keras.models.load_model(path)
+            print(f"[PneumoScan] Loaded TensorFlow model: {path}")
+            return _tf_model
+    return None
 
 
 def _load_torch():
