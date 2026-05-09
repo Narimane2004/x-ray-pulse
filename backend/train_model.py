@@ -1,194 +1,205 @@
-# Generated from: pneumonie201 (1).ipynb
-# Converted at: 2026-05-09T21:18:42.338Z
+# Generated from: DENSENET121.ipynb
+# Converted at: 2026-05-09T23:27:09.462Z
 # Next step (optional): refactor into modules & generate tests with RunCell
 # Quick start: pip install runcell
 
 import os
 import cv2
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import tensorflow as tf
-
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.applications import DenseNet121
 from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Dropout, BatchNormalization
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
+from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.utils.class_weight import compute_class_weight
-from tensorflow.keras.applications import DenseNet201
 
-# =========================
-# 1. AUTO DETECTION DATASET
-# =========================
-def find_dataset_root():
-    base = "/kaggle/input"
-    for root, dirs, files in os.walk(base):
-        if "train" in dirs and "test" in dirs:
-            print(f"Dataset trouvé : {root}")
-            return root
-    raise Exception("Dataset chest X-ray introuvable dans /kaggle/input")
 
-DATA_DIR = find_dataset_root()
-
-# =========================
-# 2. CONFIG
-# =========================
-BATCH_SIZE_PER_REPLICA = 128
-GLOBAL_BATCH_SIZE = BATCH_SIZE_PER_REPLICA * 2
-IMG_SIZE = (224, 224)
-EPOCHS = 10
+train_dir = r"C:\pneumoniee\chest_xray\chest_xray\train"
+test_dir  = r"C:\pneumoniee\chest_xray\chest_xray\test"
+BATCH_SIZE    = 32
+EPOCHS        = 10
+IMG_SIZE      = (224, 224)
 LEARNING_RATE = 1e-4
 
-print("DATA_DIR =", DATA_DIR)
+for d in [train_dir, test_dir]:
+    if not os.path.exists(d):
+        raise FileNotFoundError(f'Dossier introuvable : {d}')
+    print(f'Dossier trouvé : {d}')
 
-# =========================
-# 3. STRATEGY GPU
-# =========================
-strategy = tf.distribute.MirroredStrategy()
-print("GPUs:", strategy.num_replicas_in_sync)
+import os
+import pandas as pd
 
-# =========================
-# 4. DATA GENERATORS
-# =========================
+data = []
+
+for label in os.listdir(train_dir):
+    class_dir = os.path.join(train_dir, label)
+    
+    if os.path.isdir(class_dir):
+        for img in os.listdir(class_dir):
+            data.append([os.path.join(class_dir, img), label])
+
+df = pd.DataFrame(data, columns=["Filename", "label"])
+
+
+import matplotlib.pyplot as plt
+import cv2
+
+
+print(df['label'].value_counts())
+
+df['label'].value_counts().plot(kind='bar', title="Répartition des classes")
+plt.show()
+
+sample = df.sample(6)
+plt.figure(figsize=(10,6))
+
+for i, row in enumerate(sample.itertuples()):
+    img = cv2.imread(row.Filename)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+    plt.subplot(2,3,i+1)
+    plt.imshow(img)
+    plt.title(row.label)
+    plt.axis('off')
+
+plt.show()
+
+
+
 train_datagen = ImageDataGenerator(
     rescale=1./255,
     rotation_range=20,
-    zoom_range=0.2,
     width_shift_range=0.2,
     height_shift_range=0.2,
+    shear_range=0.2,
+    zoom_range=0.2,
     horizontal_flip=True,
+    fill_mode='nearest',
     validation_split=0.2
 )
 
 test_datagen = ImageDataGenerator(rescale=1./255)
 
 train_generator = train_datagen.flow_from_directory(
-    os.path.join(DATA_DIR, "train"),
+    train_dir,
     target_size=IMG_SIZE,
-    batch_size=GLOBAL_BATCH_SIZE,
-    class_mode="binary",
-    subset="training"
+    batch_size=BATCH_SIZE,
+    class_mode='binary',
+    subset='training',
+    shuffle=True
 )
 
-val_generator = train_datagen.flow_from_directory(
-    os.path.join(DATA_DIR, "train"),
+val_data = train_datagen.flow_from_directory(
+    train_dir,
     target_size=IMG_SIZE,
-    batch_size=GLOBAL_BATCH_SIZE,
-    class_mode="binary",
-    subset="validation"
-)
-
-test_generator = test_datagen.flow_from_directory(
-    os.path.join(DATA_DIR, "test"),
-    target_size=IMG_SIZE,
-    batch_size=GLOBAL_BATCH_SIZE,
-    class_mode="binary",
+    batch_size=BATCH_SIZE,
+    class_mode='binary',
+    subset='validation',
     shuffle=False
 )
 
-# =========================
-# 5. CLASS WEIGHTS
-# =========================
-class_weights = compute_class_weight(
-    class_weight="balanced",
-    classes=np.unique(train_generator.classes),
-    y=train_generator.classes
+test_generator = test_datagen.flow_from_directory(
+    test_dir,
+    target_size=IMG_SIZE,
+    batch_size=BATCH_SIZE,
+    class_mode='binary',
+    shuffle=False
 )
-class_weights = dict(enumerate(class_weights))
-print("Class weights:", class_weights)
 
-# =========================
-# 6. MODEL (DenseNet201)
-# =========================
-with strategy.scope():
+categories = list(train_generator.class_indices.keys())
 
-    base_model = DenseNet201(
-        weights="imagenet",
-        include_top=False,
-        input_shape=(224, 224, 3)
-    )
+print(f'Classes détectées   : {train_generator.class_indices}')
+print(f'Échantillons train  : {train_generator.samples}')
+print(f'Échantillons val    : {val_data.samples}')
+print(f'Échantillons test   : {test_generator.samples}')
+
+cls_train = train_generator.classes
+class_weights = compute_class_weight(
+    class_weight='balanced',
+    classes=np.unique(cls_train),
+    y=cls_train
+)
+class_weights_dict = dict(enumerate(class_weights))
+print(f'Class Weights : {class_weights_dict}')
+
+    base_model = DenseNet121(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
 
     base_model.trainable = True
-    for layer in base_model.layers[:-70]:
+    for layer in base_model.layers[:-50]:
         layer.trainable = False
 
     x = base_model.output
     x = GlobalAveragePooling2D()(x)
     x = BatchNormalization()(x)
-    x = Dense(256, activation="relu")(x)
+    x = Dense(256, activation='relu')(x)
     x = Dropout(0.4)(x)
-    output = Dense(1, activation="sigmoid")(x)
+    predictions = Dense(1, activation='sigmoid')(x)
 
-    model = Model(inputs=base_model.input, outputs=output)
+    model = Model(inputs=base_model.input, outputs=predictions)
 
     model.compile(
         optimizer=Adam(learning_rate=LEARNING_RATE),
         loss=tf.keras.losses.BinaryCrossentropy(label_smoothing=0.1),
-        metrics=["accuracy", tf.keras.metrics.Recall(name="recall")]
+        metrics=['accuracy', tf.keras.metrics.Recall(name='recall')]
     )
 
 model.summary()
 
-# =========================
-# 7. CALLBACKS
-# =========================
+save_path = os.path.join(os.getcwd(), 'densenet_model.keras')
+
 callbacks = [
-    ReduceLROnPlateau(monitor="val_loss", factor=0.5, patience=2, min_lr=1e-6),
-    ModelCheckpoint("best_model.keras", monitor="val_accuracy", save_best_only=True)
+    ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=2, verbose=1, min_lr=1e-6),
+    ModelCheckpoint(save_path, monitor='val_accuracy', save_best_only=True, verbose=1),
+    EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True, verbose=1)
 ]
 
-# =========================
-# 8. TRAINING
-# =========================
+print(f'Modèle sauvegardé dans : {save_path}')
+
 history = model.fit(
     train_generator,
-    validation_data=val_generator,
     epochs=EPOCHS,
-    class_weight=class_weights,
-    callbacks=callbacks
+    validation_data=val_data,
+    class_weight=class_weights_dict,
+    callbacks=callbacks,
+    verbose=1
 )
 
-# =========================
-# 9. PLOTS
-# =========================
-plt.figure(figsize=(12,5))
-
-plt.subplot(1,2,1)
-plt.plot(history.history["accuracy"], label="train")
-plt.plot(history.history["val_accuracy"], label="val")
-plt.title("Accuracy")
-plt.legend()
-
-plt.subplot(1,2,2)
-plt.plot(history.history["loss"], label="train")
-plt.plot(history.history["val_loss"], label="val")
-plt.title("Loss")
-plt.legend()
-
+acc      = history.history['accuracy']
+val_acc  = history.history['val_accuracy']
+loss     = history.history['loss']
+val_loss = history.history['val_loss']
+epochs_range = range(len(acc))
+plt.figure(figsize=(15, 5))
+plt.subplot(1, 2, 1)
+plt.plot(epochs_range, acc,     label='Train Accuracy')
+plt.plot(epochs_range, val_acc, label='Val Accuracy')
+plt.legend(loc='lower right')
+plt.title('Accuracy')
+plt.subplot(1, 2, 2)
+plt.plot(epochs_range, loss,     label='Train Loss')
+plt.plot(epochs_range, val_loss, label='Val Loss')
+plt.legend(loc='upper right')
+plt.title('Loss')
+plt.tight_layout()
 plt.show()
 
-# =========================
-# 10. EVALUATION
-# =========================
-print("Testing...")
+test_results = model.evaluate(test_generator)
+print(f'Test Accuracy : {test_results[1]*100:.2f}%')
+print(f'Test Recall   : {test_results[2]*100:.2f}%')
 
-test_loss, test_acc, test_recall = model.evaluate(test_generator)
+test_generator.reset()
+preds_test        = model.predict(test_generator)
+predicted_classes = (preds_test > 0.5).astype('int32').flatten()
+true_classes      = test_generator.classes
 
-print("Test Accuracy:", test_acc)
-print("Test Recall:", test_recall)
+print('\nClassification Report (Test):\n')
+print(classification_report(true_classes, predicted_classes, target_names=categories))
 
-pred = model.predict(test_generator)
-y_pred = (pred > 0.5).astype(int).flatten()
-y_true = test_generator.classes
-
-print(classification_report(y_true, y_pred))
-
-# =========================
-# 11. CONFUSION MATRIX
-# =========================
-cm = confusion_matrix(y_true, y_pred)
-sns.heatmap(cm, annot=True, fmt="d")
-plt.title("Confusion Matrix")
-plt.show()
+print('Confusion Matrix')
+print(confusion_matrix(true_classes, predicted_classes))
