@@ -13,10 +13,29 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Importez une radiographie thoracique et obtenez en quelques secondes une analyse (Normal / Pneumonie) avec score de confiance.",
+          "Importez une radiographie thoracique et obtenez une analyse (Normal / Pneumonie) avec score de confiance. Outil d'aide au diagnostic.",
       },
-      { property: "og:title", content: "PneumoScan" },
-      { property: "og:description", content: "Analyse de pneumonie sur radiographie thoracique." },
+      { name: "keywords", content: "pneumonie, radiographie thoracique, x-ray, détection pneumonie, imagerie médicale, diagnostic pulmonaire" },
+      { property: "og:title", content: "PneumoScan — Détection de pneumonie sur radiographie" },
+      { property: "og:description", content: "Analyse de radiographie thoracique avec score de confiance." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:title", content: "PneumoScan — Détection de pneumonie" },
+      { name: "twitter:description", content: "Analyse de radiographie thoracique avec score de confiance." },
+    ],
+    links: [{ rel: "canonical", href: "/" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "MedicalWebPage",
+          name: "PneumoScan",
+          description:
+            "Outil d'aide au diagnostic permettant l'analyse de radiographies thoraciques pour la détection de la pneumonie.",
+          inLanguage: "fr",
+          about: { "@type": "MedicalCondition", name: "Pneumonie" },
+        }),
+      },
     ],
   }),
   component: Index,
