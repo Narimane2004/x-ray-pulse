@@ -9,14 +9,14 @@ import { Activity, Upload, Sparkles, ShieldCheck, AlertTriangle } from "lucide-r
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "PneumoScan AI — Détection IA de pneumonie sur radiographie" },
+      { title: "PneumoScan — Détection de pneumonie sur radiographie thoracique" },
       {
         name: "description",
         content:
-          "Importez une radiographie thoracique et obtenez en quelques secondes une prédiction IA (Normal / Pneumonie) avec score de confiance.",
+          "Importez une radiographie thoracique et obtenez en quelques secondes une analyse (Normal / Pneumonie) avec score de confiance.",
       },
-      { property: "og:title", content: "PneumoScan AI" },
-      { property: "og:description", content: "Détection IA de la pneumonie sur radiographie thoracique." },
+      { property: "og:title", content: "PneumoScan" },
+      { property: "og:description", content: "Analyse de pneumonie sur radiographie thoracique." },
     ],
   }),
   component: Index,
@@ -93,13 +93,13 @@ function Index() {
             <Activity className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-glow">PneumoScan AI</h1>
-            <p className="text-xs text-muted-foreground">Medical Imaging · Deep Learning</p>
+            <h1 className="text-xl font-bold tracking-tight text-glow">PneumoScan</h1>
+            <p className="text-xs text-muted-foreground">Medical Imaging</p>
           </div>
         </div>
         <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground glass px-3 py-1.5 rounded-full">
           <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-          Inference engine ready
+          Système prêt
         </div>
       </header>
 
@@ -108,14 +108,14 @@ function Index() {
         <div className="space-y-8">
           <div>
             <div className="inline-flex items-center gap-2 text-xs text-primary glass px-3 py-1 rounded-full mb-4">
-              <Sparkles className="w-3 h-3" /> AI-assisted diagnostic preview
+              <Sparkles className="w-3 h-3" /> Aperçu d'analyse diagnostique
             </div>
             <h2 className="text-4xl md:text-5xl font-bold leading-tight tracking-tight">
-              Détection intelligente de la <span className="text-primary text-glow">pneumonie</span> par radiographie
+              Détection de la <span className="text-primary text-glow">pneumonie</span> par radiographie
             </h2>
             <p className="mt-4 text-muted-foreground max-w-lg">
-              Importez une image de radiographie thoracique. Notre modèle de deep learning analyse la
-              structure pulmonaire et fournit une prédiction avec un score de confiance.
+              Importez une image de radiographie thoracique. La structure pulmonaire est analysée
+              et un résultat est fourni avec un score de confiance.
             </p>
           </div>
 
@@ -214,7 +214,7 @@ function Index() {
               </div>
               {result.mock && (
                 <p className="text-[11px] text-muted-foreground mt-3">
-                  ⓘ Mode démo. Définissez <code className="text-primary">BACKEND_URL</code> pour brancher le modèle réel.
+                  ⓘ Mode démo. Définissez <code className="text-primary">BACKEND_URL</code> pour activer l'analyse complète.
                 </p>
               )}
             </div>
@@ -260,7 +260,7 @@ function Index() {
       )}
 
       <footer className="container mx-auto px-6 py-8 text-center text-xs text-muted-foreground border-t border-border/40">
-        PneumoScan AI · Outil d'aide au diagnostic — ne remplace pas un avis médical professionnel.
+        PneumoScan · Outil d'aide au diagnostic — ne remplace pas un avis médical professionnel.
       </footer>
     </main>
   );
