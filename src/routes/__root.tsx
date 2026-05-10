@@ -72,15 +72,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { name: "robots", content: "index, follow" },
-      { name: "theme-color", content: "#0b0f17" },
+      { title: "Narimane_DiagnosticPneumo.app" },
+      { name: "description", content: "Site web pour prédir la maladie de pneumonie deeplearning" },
+      { name: "author", content: "Lovable" },
+      { property: "og:title", content: "Narimane_DiagnosticPneumo.app" },
+      { property: "og:description", content: "Site web pour prédir la maladie de pneumonie deeplearning" },
       { property: "og:type", content: "website" },
-      { property: "og:site_name", content: "PneumoScan" },
-      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:card", content: "summary" },
+      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Narimane_DiagnosticPneumo.app" },
+      { name: "twitter:description", content: "Site web pour prédir la maladie de pneumonie deeplearning" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/12aaf5d3-92e1-44c3-abeb-3b61ce75caad" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/12aaf5d3-92e1-44c3-abeb-3b61ce75caad" },
     ],
     links: [
-      { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/favicon.ico" },
+      {
+        rel: "stylesheet",
+        href: appCss,
+      },
     ],
   }),
   shellComponent: RootShell,
@@ -91,7 +100,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr">
+    <html lang="en">
       <head>
         <HeadContent />
       </head>
