@@ -94,9 +94,9 @@ def predict_image(image_bytes: bytes) -> tuple[str, float]:
 
     tf_model = _load_tf()
     if tf_model is not None:
-        x = np.expand_dims(arr, 0)
+        x = np.expand_dims(arr, 0)  # arr already resized to 224x224 and normalized /255
         prob = float(tf_model.predict(x, verbose=0).ravel()[0])
-        label = CLASS_NAMES[1] if prob >= 0.5 else CLASS_NAMES[0]
+        label = CLASS_NAMES[1] if prob > 0.3 else CLASS_NAMES[0]
         confidence = prob if label == CLASS_NAMES[1] else 1 - prob
         return label, confidence
 
